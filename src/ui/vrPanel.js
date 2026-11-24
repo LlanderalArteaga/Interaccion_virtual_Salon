@@ -11,8 +11,8 @@ export function createVrPanel(scene, actions) {
 	);
 	group.add(panel);
 	// Fijo al mundo: el panel no sigue la cabeza ni gira con la vista.
-	group.position.set(-1.9, 1.82, 0.25);
-	group.lookAt(0, 1.62, 1.2);
+	group.position.set(0, 1.95, 0);
+	group.lookAt(0, 1.62, 1.8);
 
 	const controls = [
 		createControl('reset', 'REINICIAR', -0.25, 0x2f5961, actions.reset),
