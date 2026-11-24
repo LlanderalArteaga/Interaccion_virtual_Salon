@@ -37,6 +37,11 @@ export function createSessionControls(renderer, state, elements, callbacks) {
 	const onSessionStart = () => {
 		window.clearTimeout(requestFeedbackTimer);
 		state.xr.session = renderer.xr.getSession();
+		const referenceSpace = renderer.xr.getReferenceSpace();
+		if (referenceSpace && typeof XRRigidTransform === 'function') {
+			const startOffset = new XRRigidTransform({ x: 0, y: 0, z: -0.45 });
+			renderer.xr.setReferenceSpace(referenceSpace.getOffsetReferenceSpace(startOffset));
+		}
 		callbacks.onStart?.(state.xr.session);
 		elements.compatibilityStatus.textContent = 'Sesión VR activa. Muestra una o ambas manos para comenzar.';
 	};
