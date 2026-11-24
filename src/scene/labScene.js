@@ -91,9 +91,6 @@ export function createLabScene(previewElement) {
 
 	const app = {
 		scene, camera, renderer, physicsWorld, stations, bins, pieces, environmentReady,
-		getBoardPlacement() {
-			return room.boardPlacement ?? null;
-		},
 		stepPhysics(deltaSeconds) {
 			stepPhysics(physicsWorld, deltaSeconds);
 			syncPhysicsMeshes(pieces);
@@ -228,8 +225,6 @@ async function loadSalonEnvironment(scene, world, surfaceMaterial, room) {
 			if (name.includes('thomthom') || name === 'active view') ignoredNodes.push(object);
 		});
 		for (const object of ignoredNodes) object.removeFromParent();
-		// El GLB de SketchUp usa Z como eje vertical; se orienta a Y-up y hacia el frente.
-		model.rotation.set(-Math.PI / 2, Math.PI, 0);
 		model.updateMatrixWorld(true);
 		const bounds = new THREE.Box3().setFromObject(model);
 		const size = bounds.getSize(new THREE.Vector3());
@@ -243,24 +238,6 @@ async function loadSalonEnvironment(scene, world, surfaceMaterial, room) {
 		anchor.position.set(-center.x, -bounds.min.y, -center.z);
 		anchor.add(model);
 		scene.add(anchor);
-		anchor.updateMatrixWorld(true);
-		const board = model.getObjectByName('pizarron_pizarron')
-			?? model.getObjectByName('pizarron');
-		if (board) {
-			const boardBounds = new THREE.Box3().setFromObject(board);
-			const boardSize = boardBounds.getSize(new THREE.Vector3());
-			const boardCenter = boardBounds.getCenter(new THREE.Vector3());
-			const normalAxis = boardSize.x <= boardSize.y && boardSize.x <= boardSize.z
-				? 'x'
-				: boardSize.y <= boardSize.z ? 'y' : 'z';
-			const towardRoom = new THREE.Vector3().subVectors(new THREE.Vector3(), boardCenter);
-			const normal = new THREE.Vector3();
-			normal[normalAxis] = Math.sign(towardRoom[normalAxis]) || 1;
-			const position = boardCenter.clone().addScaledVector(normal, 0.36);
-			position.y = Math.max(boardCenter.y + 0.48, 1.85);
-			room.boardPlacement = { position, target: position.clone().add(normal) };
-		}
-
 		room.visuals.visible = false;
 		for (const body of room.bodies) world.removeBody(body);
 		room.bodies = createRoomColliders(world, surfaceMaterial, size.x, size.z, size.y);

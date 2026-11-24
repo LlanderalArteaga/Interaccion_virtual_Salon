@@ -11,8 +11,8 @@ export function createVrPanel(scene, actions) {
 	);
 	group.add(panel);
 	// Fijo al mundo: el panel no sigue la cabeza ni gira con la vista.
-	group.position.set(0, 1.95, -2.22);
-	group.lookAt(0, 1.42, 0);
+	group.position.set(0, 1.82, -2.18);
+	group.lookAt(0, 1.82, 0);
 
 	const controls = [
 		createControl('reset', 'REINICIAR', -0.25, 0x2f5961, actions.reset),
@@ -30,10 +30,6 @@ export function createVrPanel(scene, actions) {
 	return {
 		group,
 		controls: controls.map(control => control.hitMesh),
-		placeAt(position, target) {
-			group.position.copy(position);
-			group.lookAt(target);
-		},
 		update(state, now) {
 			const beginLabel = getBeginLabel(state);
 			if (beginLabel !== lastBeginLabel) {
