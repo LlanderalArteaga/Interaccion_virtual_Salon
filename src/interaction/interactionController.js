@@ -3,7 +3,6 @@ import { CANNON } from '../physics/physicsWorld.js';
 import { formatTime, getCategoryProgress, getElapsedMs, getProgress, LAB_CONFIG, resetScore, setMessage } from '../state/labState.js';
 
 const THROW_SPEED_LIMIT = 4.2;
-const HELD_LINEAR_SPEED_LIMIT = 1.15;
 const REST_LINEAR_SPEED = 0.17;
 const REST_ANGULAR_SPEED = 0.32;
 const REST_CONFIRM_MS = 700;
@@ -31,11 +30,13 @@ export class InteractionController {
 		this.grabOffset = new THREE.Vector3();
 		this.grabPoint = new THREE.Vector3();
 		this.nextPosition = new THREE.Vector3();
+		this.smoothedHeldPosition = new THREE.Vector3();
 		this.frameVelocity = new THREE.Vector3();
 		this.dragVelocity = new THREE.Vector3();
 		this.dragAngularVelocity = new THREE.Vector3();
 		this.grabRotationOffset = new THREE.Quaternion();
 		this.nextQuaternion = new THREE.Quaternion();
+		this.rotationTarget = new THREE.Quaternion();
 		this.previousHeldQuaternion = new THREE.Quaternion();
 		this.rotationDeltaQuaternion = new THREE.Quaternion();
 		this.rotationAxis = new THREE.Vector3();
@@ -162,13 +163,15 @@ export class InteractionController {
 		piece.status = 'held';
 		piece.restingSince = null;
 		piece.wrongFeedbackShown = false;
-		// El cuerpo permanece dinámico: conserva gravedad y respuesta a colisiones durante el agarre.
+		// El modo cinemático evita que el solver sacuda la pieza mientras sigue la mano.
 		piece.body.velocity.set(0, 0, 0);
 		piece.body.angularVelocity.set(0, 0, 0);
 		piece.body.wakeUp();
+		this.#setBodyType(piece.body, CANNON.Body.KINEMATIC, 0);
 		hand.ray.at(THREE.MathUtils.clamp(hit.distance, LAB_CONFIG.grabDistanceMin, LAB_CONFIG.grabDistanceMax), this.grabPoint);
 		this.state.dragDistance = this.grabPoint.distanceTo(hand.ray.origin);
 		this.grabOffset.set(piece.body.position.x, piece.body.position.y, piece.body.position.z).sub(this.grabPoint);
+		this.smoothedHeldPosition.set(piece.body.position.x, piece.body.position.y, piece.body.position.z);
 		this.previousHeldQuaternion.set(piece.body.quaternion.x, piece.body.quaternion.y, piece.body.quaternion.z, piece.body.quaternion.w);
 		this.dragAngularVelocity.set(0, 0, 0);
 		if (hand.handOrientation) {
@@ -189,20 +192,24 @@ export class InteractionController {
 		this.nextPosition.x = THREE.MathUtils.clamp(this.nextPosition.x, -2.05, 2.05);
 		this.nextPosition.y = THREE.MathUtils.clamp(this.nextPosition.y, 0.12, 2.25);
 		this.nextPosition.z = THREE.MathUtils.clamp(this.nextPosition.z, -2.05, 2.05);
-		this.#keepHeldPieceAboveTables(piece);
 		const deltaSeconds = (now - this.lastDragTime) / 1000;
 		const safeDeltaSeconds = THREE.MathUtils.clamp(deltaSeconds, 1 / 120, 0.05);
+		const positionSmoothing = 1 - Math.exp(-safeDeltaSeconds / 0.045);
+		this.smoothedHeldPosition.lerp(this.nextPosition, positionSmoothing);
+		this.nextPosition.copy(this.smoothedHeldPosition);
+		this.#keepHeldPieceAboveTables(piece);
 		this.#moveHeldRotation(piece, hand, deltaSeconds);
-		// Servo de velocidad: impulsa el cuerpo hacia la mano sin teletransportarlo.
-		// Las paredes y mesas pueden detenerlo mediante el solver físico.
+		// Conserva la velocidad de la mano para el lanzamiento y evita una segunda integración mientras está sujeta.
 		this.frameVelocity.set(
 			this.nextPosition.x - piece.body.position.x,
 			this.nextPosition.y - piece.body.position.y,
 			this.nextPosition.z - piece.body.position.z
-		).multiplyScalar(1 / safeDeltaSeconds).clampLength(0, HELD_LINEAR_SPEED_LIMIT);
+		).multiplyScalar(1 / safeDeltaSeconds).clampLength(0, THROW_SPEED_LIMIT);
 		this.dragVelocity.copy(this.frameVelocity);
-		piece.body.velocity.set(this.dragVelocity.x, this.dragVelocity.y, this.dragVelocity.z);
-		piece.body.wakeUp();
+		piece.body.position.set(this.nextPosition.x, this.nextPosition.y, this.nextPosition.z);
+		piece.body.velocity.set(0, 0, 0);
+		piece.body.previousPosition.copy(piece.body.position);
+		piece.body.interpolatedPosition.copy(piece.body.position);
 		piece.body.aabbNeedsUpdate = true;
 		this.lastDragTime = now;
 	}
@@ -213,6 +220,8 @@ export class InteractionController {
 		this.state.selectedBy = null;
 		if (!piece || piece.classified) return;
 		this.#setBodyType(piece.body, CANNON.Body.DYNAMIC, piece.massKg);
+		piece.body.velocity.set(this.dragVelocity.x, this.dragVelocity.y, this.dragVelocity.z);
+		piece.body.angularVelocity.set(this.dragAngularVelocity.x, this.dragAngularVelocity.y, this.dragAngularVelocity.z);
 		limitBodyVector(piece.body.velocity, THROW_SPEED_LIMIT);
 		limitBodyVector(piece.body.angularVelocity, THROW_ANGULAR_SPEED_LIMIT);
 		piece.body.aabbNeedsUpdate = true;
@@ -227,6 +236,8 @@ export class InteractionController {
 		const piece = this.state.pieces.find(item => item.id === this.state.selectedPieceId);
 		if (piece && !piece.classified) {
 			this.#setBodyType(piece.body, CANNON.Body.DYNAMIC, piece.massKg);
+			piece.body.velocity.set(this.dragVelocity.x, this.dragVelocity.y, this.dragVelocity.z);
+			piece.body.angularVelocity.set(this.dragAngularVelocity.x, this.dragAngularVelocity.y, this.dragAngularVelocity.z);
 			limitBodyVector(piece.body.velocity, THROW_SPEED_LIMIT);
 			limitBodyVector(piece.body.angularVelocity, THROW_ANGULAR_SPEED_LIMIT);
 			piece.body.aabbNeedsUpdate = true;
@@ -355,7 +366,10 @@ export class InteractionController {
 			this.dragAngularVelocity.set(0, 0, 0);
 			return;
 		}
-		this.nextQuaternion.copy(hand.handOrientation).multiply(this.grabRotationOffset).normalize();
+		this.rotationTarget.copy(hand.handOrientation).multiply(this.grabRotationOffset).normalize();
+		const rotationSmoothing = 1 - Math.exp(-Math.max(0, deltaSeconds) / 0.045);
+		this.nextQuaternion.set(piece.body.quaternion.x, piece.body.quaternion.y, piece.body.quaternion.z, piece.body.quaternion.w)
+			.slerp(this.rotationTarget, rotationSmoothing).normalize();
 		if (deltaSeconds > 0 && deltaSeconds <= 0.1) {
 			this.previousHeldQuaternion.set(piece.body.quaternion.x, piece.body.quaternion.y, piece.body.quaternion.z, piece.body.quaternion.w);
 			this.rotationDeltaQuaternion.copy(this.previousHeldQuaternion).invert().multiply(this.nextQuaternion).normalize();
@@ -382,7 +396,10 @@ export class InteractionController {
 		} else {
 			this.dragAngularVelocity.set(0, 0, 0);
 		}
-		piece.body.angularVelocity.set(this.dragAngularVelocity.x, this.dragAngularVelocity.y, this.dragAngularVelocity.z);
+		piece.body.angularVelocity.set(0, 0, 0);
+		piece.body.quaternion.set(this.nextQuaternion.x, this.nextQuaternion.y, this.nextQuaternion.z, this.nextQuaternion.w);
+		piece.body.previousQuaternion.copy(piece.body.quaternion);
+		piece.body.interpolatedQuaternion.copy(piece.body.quaternion);
 		piece.body.aabbNeedsUpdate = true;
 	}
 
