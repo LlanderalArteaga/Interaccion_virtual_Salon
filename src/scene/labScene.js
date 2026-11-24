@@ -42,7 +42,7 @@ export function createLabScene(previewElement) {
 	scene.background = new THREE.Color('#526b68');
 	scene.fog = null;
 	const camera = new THREE.PerspectiveCamera(54, 1, 0.05, 18);
-	camera.position.set(0.1, 1.6, 2.8);
+	camera.position.set(0.1, 1.6, 3.4);
 	camera.lookAt(0.05, 0.7, -0.9);
 
 	const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false, powerPreference: 'high-performance' });
