@@ -24,10 +24,10 @@ const CATEGORY_SPECS = Object.freeze([
 
 const STATIONS = Object.freeze([
 	// Cuatro mesas alineadas de izquierda a derecha, dentro del alcance frontal.
-	{ id: 'row-1', x: -1.08, z: -0.62, rotation: 0 },
-	{ id: 'row-2', x: -0.36, z: -0.62, rotation: 0 },
-	{ id: 'row-3', x: 0.36, z: -0.62, rotation: 0 },
-	{ id: 'row-4', x: 1.08, z: -0.62, rotation: 0 }
+	{ id: 'row-1', x: -1.38, z: -1.18, rotation: 0 },
+	{ id: 'row-2', x: -0.46, z: -1.18, rotation: 0 },
+	{ id: 'row-3', x: 0.46, z: -1.18, rotation: 0 },
+	{ id: 'row-4', x: 1.38, z: -1.18, rotation: 0 }
 ]);
 
 const OBJECT_SLOTS = Object.freeze([
@@ -91,9 +91,6 @@ export function createLabScene(previewElement) {
 
 	const app = {
 		scene, camera, renderer, physicsWorld, stations, bins, pieces, environmentReady,
-		getBoardPlacement() {
-			return room.boardPlacement ?? null;
-		},
 		stepPhysics(deltaSeconds) {
 			stepPhysics(physicsWorld, deltaSeconds);
 			syncPhysicsMeshes(pieces);
@@ -228,8 +225,6 @@ async function loadSalonEnvironment(scene, world, surfaceMaterial, room) {
 			if (name.includes('thomthom') || name === 'active view') ignoredNodes.push(object);
 		});
 		for (const object of ignoredNodes) object.removeFromParent();
-		// El GLB de SketchUp usa Z como eje vertical; se orienta a Y-up y al frente de la vista.
-		model.rotation.set(-Math.PI / 2, Math.PI, 0);
 		model.updateMatrixWorld(true);
 		const bounds = new THREE.Box3().setFromObject(model);
 		const size = bounds.getSize(new THREE.Vector3());
@@ -243,22 +238,6 @@ async function loadSalonEnvironment(scene, world, surfaceMaterial, room) {
 		anchor.position.set(-center.x, -bounds.min.y, -center.z);
 		anchor.add(model);
 		scene.add(anchor);
-		anchor.updateMatrixWorld(true);
-		const board = model.getObjectByName('pizarron_pizarron')
-			?? model.getObjectByName('pizarron');
-		if (board) {
-			const boardBounds = new THREE.Box3().setFromObject(board);
-			const boardSize = boardBounds.getSize(new THREE.Vector3());
-			const boardCenter = boardBounds.getCenter(new THREE.Vector3());
-			const normalAxis = boardSize.x <= boardSize.y && boardSize.x <= boardSize.z
-				? 'x'
-				: boardSize.y <= boardSize.z ? 'y' : 'z';
-			const towardRoom = new THREE.Vector3().subVectors(new THREE.Vector3(), boardCenter);
-			const normal = new THREE.Vector3();
-			normal[normalAxis] = Math.sign(towardRoom[normalAxis]) || 1;
-			const position = boardCenter.clone().addScaledVector(normal, 0.24);
-			room.boardPlacement = { position, target: position.clone().add(normal) };
-		}
 
 		room.visuals.visible = false;
 		for (const body of room.bodies) world.removeBody(body);
@@ -339,8 +318,8 @@ function createStations(scene, world, surfaceMaterial) {
 
 function createBins(scene, world, surfaceMaterial) {
 	const positions = [
-		{ x: -0.90, z: 0.52 }, { x: -0.30, z: 0.52 },
-		{ x: 0.30, z: 0.52 }, { x: 0.90, z: 0.52 }
+		{ x: -0.50, z: -0.27 }, { x: 0.02, z: -0.27 },
+		{ x: 0.54, z: -0.27 }, { x: 1.00, z: -0.27 }
 	];
 	return CATEGORY_SPECS.map((category, index) => {
 		const position = positions[index];

@@ -11,7 +11,7 @@ Laboratorio universitario de realidad virtual para clasificar figuras geométric
 
 La práctica permite explorar conceptos de interacción espacial y física 3D en una actividad concreta. El alumno reconoce cuatro clases de cuerpos, los manipula con las manos y observa la diferencia entre soltar una figura dentro de su recipiente correcto, colocarla en uno equivocado o dejarla caer fuera.
 
-El reto tiene **20 figuras**: cinco cubos, cinco esferas, cinco pirámides cuadradas y cinco prismas hexagonales. Se distribuyen en **cuatro mesas alineadas en una fila centrada frente al pizarrón**, con cinco piezas cada una. Los cuatro recipientes quedan centrados en una fila más cercana al usuario. El panel tridimensional muestra progreso, tiempo, intentos, errores, precisión y avance por categoría.
+El reto tiene **20 figuras**: cinco cubos, cinco esferas, cinco pirámides cuadradas y cinco prismas hexagonales. Se distribuyen en **cuatro mesas alineadas en una fila**, con cinco piezas cada una. Hay un recipiente abierto por categoría. El panel tridimensional muestra progreso, tiempo, intentos, errores, precisión y avance por categoría.
 
 La ambientación representa un laboratorio universitario de prototipado. Sus paredes, piso, ventanales y luminarias se generan con geometría de Three.js. El escenario es opaco y virtual: no usa cámara, passthrough ni realidad aumentada o mixta.
 
@@ -84,7 +84,7 @@ La física y el renderizado se actualizan desde el ciclo de animación de Three.
 - Las mesas, el piso, las paredes y los recipientes tienen colisionadores estáticos. Cada recipiente está construido con base y paredes separadas; su boca queda abierta.
 - El escenario se exporta de SketchUp a GLB. La aplicación calcula su caja envolvente para centrar el salón a la altura del piso y dimensionar colisionadores estáticos de perímetro. Las mesas del reto, las figuras y los recipientes siguen siendo objetos independientes.
 - Cubos y esferas usan colisionadores sencillos. Pirámides y prismas usan formas convexas aproximadas para mantener bajo el costo de cálculo.
-- Al tomar una pieza, su cuerpo pasa a modo cinemático y sigue la mano sin vibrar por la respuesta del solver. Al soltarla vuelve a ser dinámico, conserva el movimiento de la mano y queda sometida a gravedad y colisiones, con límites de velocidad para reducir sacudidas y penetraciones.
+- Al tomar una pieza, su cuerpo permanece dinámico y se guía con una velocidad limitada hacia la mano; no se teletransporta. Así la gravedad y las colisiones con mesas y recipientes siguen activas durante el agarre. Al soltarla conserva el movimiento calculado por la física, con límites de velocidad para reducir sacudidas y penetraciones.
 - Un objeto se valida después de quedar suficientemente quieto. La categoría debe coincidir con el recipiente asignado y el objeto debe estar dentro de su zona útil. No se cuenta solo por tocar el recipiente.
 - Una colocación correcta suma una unidad y bloquea la pieza. Un recipiente equivocado genera un aviso y suma un error una sola vez por intento; la figura puede recuperarse y probarse otra vez.
 - Una pieza fuera de los recipientes no se pierde: el marcador de recuperación ayuda a localizarla y volver a tomarla.

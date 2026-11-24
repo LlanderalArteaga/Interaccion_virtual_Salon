@@ -45,11 +45,7 @@ window.addEventListener('unhandledrejection', event => {
 try {
 	app = createLabScene(elements.preview);
 	app.environmentReady.then(loaded => {
-		if (loaded) {
-			const boardPlacement = app.getBoardPlacement();
-			if (boardPlacement) panel?.placeAt(boardPlacement.position, boardPlacement.target);
-			return;
-		}
+		if (loaded) return;
 		elements.browserMessage.textContent = 'No se pudo cargar assets/models/Salon.glb. Se muestra el escenario provisional; revisa que el archivo exista y que GitHub Pages lo haya publicado.';
 		elements.browserMessage.classList.remove('d-none');
 	});
