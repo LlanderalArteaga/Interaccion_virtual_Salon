@@ -23,11 +23,11 @@ const CATEGORY_SPECS = Object.freeze([
 ]);
 
 const STATIONS = Object.freeze([
-	// Cuatro mesas alineadas de izquierda a derecha, dentro del alcance frontal.
-	{ id: 'row-1', x: -1.05, z: -1.5, rotation: 0 },
-	{ id: 'row-2', x: -0.35, z: -1.5, rotation: 0 },
-	{ id: 'row-3', x: 0.35, z: -1.5, rotation: 0 },
-	{ id: 'row-4', x: 1.05, z: -1.5, rotation: 0 }
+	// Las mesas forman un arco suave frente al punto de inicio del visor.
+	{ id: 'row-1', x: -1.08, z: -0.98, rotation: 0 },
+	{ id: 'row-2', x: -0.36, z: -0.74, rotation: 0 },
+	{ id: 'row-3', x: 0.36, z: -0.74, rotation: 0 },
+	{ id: 'row-4', x: 1.08, z: -0.98, rotation: 0 }
 ]);
 
 const OBJECT_SLOTS = Object.freeze([
@@ -317,8 +317,8 @@ function createStations(scene, world, surfaceMaterial) {
 
 function createBins(scene, world, surfaceMaterial) {
 	const positions = [
-		{ x: -0.90, z: -0.40 }, { x: -0.30, z: -0.40 },
-		{ x: 0.30, z: -0.40 }, { x: 0.90, z: -0.40 }
+		{ x: -0.90, z: 0.85 }, { x: -0.30, z: 0.85 },
+		{ x: 0.30, z: 0.85 }, { x: 0.90, z: 0.85 }
 	];
 	return CATEGORY_SPECS.map((category, index) => {
 		const position = positions[index];
