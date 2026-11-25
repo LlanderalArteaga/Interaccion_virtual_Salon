@@ -199,6 +199,7 @@ export class InteractionController {
 		this.nextPosition.copy(this.smoothedHeldPosition);
 		this.#keepHeldPieceAboveTables(piece);
 		this.#moveHeldRotation(piece, hand, deltaSeconds);
+		this.#keepHeldPieceOutOfBinWalls(piece);
 		// Conserva el movimiento para el lanzamiento y evita que la física integre dos veces el agarre.
 		this.frameVelocity.set(
 			this.nextPosition.x - piece.body.position.x,
@@ -357,6 +358,41 @@ export class InteractionController {
 			if (!overlapsTop) continue;
 			const minimumCenterY = table.topY + piece.halfHeight + 0.006;
 			if (this.nextPosition.y < minimumCenterY) this.nextPosition.y = minimumCenterY;
+		}
+	}
+
+	#keepHeldPieceOutOfBinWalls(piece) {
+		const previous = piece.body.position;
+		const radius = piece.boundingRadius;
+		for (const bin of this.state.bins) {
+			const wallTop = bin.floorY + bin.wallHeight;
+			const overlapsWallHeight = this.nextPosition.y + radius > bin.floorY
+				&& this.nextPosition.y - radius < wallTop;
+			if (!overlapsWallHeight) continue;
+
+			const dx = this.nextPosition.x - bin.position.x;
+			const dz = this.nextPosition.z - bin.position.z;
+			const previousDx = previous.x - bin.position.x;
+			const previousDz = previous.z - bin.position.z;
+			const innerLimit = Math.max(0, bin.innerHalf - radius - 0.004);
+			const outerLimit = bin.innerHalf + bin.wallThickness + radius;
+			const isInsideOpening = Math.abs(dx) <= innerLimit && Math.abs(dz) <= innerLimit;
+			const wasInsideOpening = Math.abs(previousDx) <= innerLimit && Math.abs(previousDz) <= innerLimit;
+			const wasOutsideWalls = Math.abs(previousDx) >= outerLimit || Math.abs(previousDz) >= outerLimit;
+			const isOutsideWalls = Math.abs(dx) >= outerLimit || Math.abs(dz) >= outerLimit;
+			const wasAboveRim = previous.y - radius >= wallTop;
+
+			// Mantiene la entrada libre por arriba y bloquea los costados mientras la pieza cruza la pared.
+			if (isInsideOpening && (wasInsideOpening || wasAboveRim)) continue;
+			if (isOutsideWalls && wasOutsideWalls) continue;
+
+			if (wasInsideOpening) {
+				this.nextPosition.x = THREE.MathUtils.clamp(this.nextPosition.x, bin.position.x - innerLimit, bin.position.x + innerLimit);
+				this.nextPosition.z = THREE.MathUtils.clamp(this.nextPosition.z, bin.position.z - innerLimit, bin.position.z + innerLimit);
+			} else {
+				this.nextPosition.x = previous.x;
+				this.nextPosition.z = previous.z;
+			}
 		}
 	}
 

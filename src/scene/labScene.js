@@ -327,7 +327,7 @@ function createBins(scene, world, surfaceMaterial) {
 		const standMaterial = new THREE.MeshStandardMaterial({ color: '#283940', roughness: 0.78 });
 		const innerHalf = category.id === 'pyramid' ? 0.17 : 0.19;
 		const wallHeight = category.id === 'pyramid' ? 0.36 : 0.38;
-		const wallThickness = 0.025;
+		const wallThickness = 0.045;
 		const outerHalf = innerHalf + wallThickness;
 		const standSize = outerHalf * 2 + 0.04;
 		const stand = new THREE.Mesh(new THREE.BoxGeometry(standSize, 0.39, standSize), standMaterial);
@@ -344,14 +344,14 @@ function createBins(scene, world, surfaceMaterial) {
 		addBinPart(group, world, surfaceMaterial, bodyMaterial, position, 0, baseY + baseThickness / 2, 0, innerHalf * 2 + wallThickness * 2, baseThickness, innerHalf * 2 + wallThickness * 2);
 		addBinPart(group, world, surfaceMaterial, bodyMaterial, position, -outerHalf, baseY + baseThickness + wallHeight / 2, 0, wallThickness, wallHeight, innerHalf * 2 + wallThickness * 2);
 		addBinPart(group, world, surfaceMaterial, bodyMaterial, position, outerHalf, baseY + baseThickness + wallHeight / 2, 0, wallThickness, wallHeight, innerHalf * 2 + wallThickness * 2);
-		addBinPart(group, world, surfaceMaterial, bodyMaterial, position, 0, baseY + baseThickness + wallHeight / 2, -outerHalf, innerHalf * 2, wallHeight, wallThickness);
-		addBinPart(group, world, surfaceMaterial, bodyMaterial, position, 0, baseY + baseThickness + wallHeight / 2, outerHalf, innerHalf * 2, wallHeight, wallThickness);
+		addBinPart(group, world, surfaceMaterial, bodyMaterial, position, 0, baseY + baseThickness + wallHeight / 2, -outerHalf, outerHalf * 2, wallHeight, wallThickness);
+		addBinPart(group, world, surfaceMaterial, bodyMaterial, position, 0, baseY + baseThickness + wallHeight / 2, outerHalf, outerHalf * 2, wallHeight, wallThickness);
 
 		const label = createTextPlane(category.name, { worldWidth: category.id === 'hex-prism' ? 0.42 : 0.32, worldHeight: 0.065, fontSize: 29, background: 'rgba(12, 20, 26, 0.96)', color: '#f6f3e9' });
 		label.position.set(0, baseY + baseThickness + wallHeight + 0.08, 0);
 		group.add(label);
 		scene.add(group);
-		return { id: category.id, name: category.name, color: category.color, group, position: new THREE.Vector3(position.x, baseY, position.z), innerHalf, wallHeight, floorY: baseY + baseThickness };
+		return { id: category.id, name: category.name, color: category.color, group, position: new THREE.Vector3(position.x, baseY, position.z), innerHalf, wallThickness, wallHeight, floorY: baseY + baseThickness };
 	});
 }
 
