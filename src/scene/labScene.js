@@ -12,7 +12,7 @@ import {
 	syncPhysicsMeshes
 } from '../physics/physicsWorld.js';
 
-export const TABLETOP_Y = 0.75;
+export const TABLETOP_Y = 0.70;
 const TABLE_SIZE = 0.68;
 const OBJECT_MASS_KG = 0.18;
 const CATEGORY_SPECS = Object.freeze([
